@@ -3,9 +3,10 @@ package com.example.weather.view;
 import com.example.weather.model.Weather;
 import com.example.weather.repo.WeatherInfoRepository;
 import com.example.weather.service.CityService;
-import com.itextpdf.text.Element;
+import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -18,27 +19,22 @@ import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-//
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfWriter;
 
 @Route("")
 public class MainVIew extends VerticalLayout {
 
-    //   private final CustomRepository repo;
     private Grid<Weather> tableInfo;
-
 
     private CityService cityService;
     private WeatherInfoRepository infoRepo;
@@ -46,18 +42,24 @@ public class MainVIew extends VerticalLayout {
     private TextField toF;
     private TextField cityF;
 
-
     @Autowired
     public MainVIew(CityService cityService, WeatherInfoRepository infoRepo) {
-        //  this.repo = repo;
 
         this.cityService = cityService;
         this.infoRepo = infoRepo;
 
-        //  this.repo = repo;
-        this.tableInfo = new Grid<>(Weather.class);
+        //this.tableInfo = new Grid<>(Weather.class);
+        this.tableInfo = new Grid<>();
+        tableInfo.addColumn( Weather::getCity).setHeader("City");
+        tableInfo.addColumn( Weather::getDate).setHeader("Date");
+        tableInfo.addColumn( Weather::getTime).setHeader("Time");
+        tableInfo.addColumn( Weather::getTemp).setHeader("Temperature");
+        tableInfo.addColumn( Weather::getPress).setHeader("Pressure");
+
+
+
         add(tableInfo);
-        listCustomers();
+        tableInfo.setItems(cityService.findAll());
 
         Label cityL = new Label("My city is = "); // have to imput the zip of the city
         Label filterL = new Label("Get the forecast from A to B date: ");
@@ -85,48 +87,18 @@ public class MainVIew extends VerticalLayout {
 
         div4.add(saveL, save);
 
-//            tableInfo.addItemClickListener(listener ->
-//                    {
-//                        if (listener.getClickCount() == 2) {
-//                            Weather a = listener.getItem();
-//
-//                            List<String> list = new ArrayList<String>();
-//                            Map<String, List<String>> parametersMap = new HashMap<String, List<String>>();
-//                            // list.add(a.getDate());
-//                            // list.add(a.getTime());
-//                            // list.add(a.getTemp());
-//                            //list.add(a.getDescr());
-//                            parametersMap.put("prm_1", list);
-//                            QueryParameters qp = new QueryParameters(parametersMap);
-//
-//                            RestTemplate restTemplate = new RestTemplate();
-//
-//                       /* final String baseUrl = "http://localhost:" + 8080 + "/info?date=" + a.getDate() + "&time=" + a.getTime();
-//                        URI uri = null;
-//                        try {
-//                            uri = new URI(baseUrl);
-//                        } catch (URISyntaxException e) {
-//                            e.printStackTrace();
-//                        }*/
-//
-//                            // ResponseEntity<String> result = restTemplate.getForEntity(uri, String.class);
-//
-//                            //      getUI().ifPresent(ui -> ui.navigate(result));
-//
-//
-//                            // getUI().ifPresent(ui -> ui.navigate("info"+"/?id=100"));
-//                        }
-//
-//                    }
-//            );
+        Button allData = new Button("All", this::getAll);
 
-        add(div1, filterL, div2, div3, div4, tableInfo);
+        add(div1, filterL, div2, div3, div4, allData, tableInfo);
     }
 
-
-    private void listCustomers() {
+    private void getAll(ClickEvent event){
         tableInfo.setItems(cityService.findAll());
     }
+
+    /**
+     *  Get the weather for interval days (default 7 days)
+     * **/
 
     private void getWeekWeather(ClickEvent event) {
 
@@ -135,9 +107,7 @@ public class MainVIew extends VerticalLayout {
             return;
         }
 
-        // default interval from current date to date+7
         List<Weather> answer;
-
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
         String searchCity = cityF.getValue();
@@ -147,7 +117,6 @@ public class MainVIew extends VerticalLayout {
         LocalDate begin = (dateFrom.isEmpty()) ? LocalDate.now() : LocalDate.parse(dateFrom, dtf);
         LocalDate end = (dateTo.isEmpty()) ? begin.plusDays(7) : LocalDate.parse(dateTo, dtf);
 
-
         answer = cityService.getIntervalData(begin, end, searchCity);
         tableInfo.setItems(answer);
     }
@@ -155,11 +124,13 @@ public class MainVIew extends VerticalLayout {
     /**
      * If the city is not found then return all list
      * **/
+
     private void getWeatherToday(ClickEvent event) {
         List<Weather> answer;
         String searchCity = cityF.getValue();
 
-        answer = (searchCity.isEmpty()) ? cityService.findAll() : cityService.getForecastToday(searchCity, LocalDate.now());
+        answer = cityService.getForecastToday(searchCity, LocalDate.now());
+       // answer = (searchCity.isEmpty()) ? cityService.getForecastToday() : cityService.getForecastToday(searchCity, LocalDate.now());
         for (Weather x : answer)
             System.out.println(x.toString());
 
@@ -167,50 +138,54 @@ public class MainVIew extends VerticalLayout {
 
     }
 
+    /** Save in pdf file the data which is in table now**/
+
     private void save(ClickEvent event) {
         List<Weather> curData = tableInfo.getDataProvider()
                 .fetch(new Query<>())
                 .collect(Collectors.toList());
 
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
         String searchCity = cityF.getValue();
         String beginDate = fromF.getValue();
         String endDate = toF.getValue();
 
-        LocalDate begin = (beginDate.isEmpty()) ? LocalDate.now() : LocalDate.parse(beginDate, dtf);
-        LocalDate end = (endDate.isEmpty()) ? begin.plusDays(7) : LocalDate.parse(endDate, dtf);
-
         Document document = new Document();
-        try
-        {
+        try{
+
             PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream("Weather.pdf"));
             document.open();
 
-            document.add(new Paragraph("Weather from " + beginDate + " to " + endDate +
-                    " in " + searchCity));
+            document.add(new Paragraph("Weather " + ((beginDate.isEmpty()) ? "" : " from " + beginDate) + ((endDate.isEmpty()) ? "" : " to " + endDate) +
+                    ((searchCity.isEmpty()) ? "" : " in " + searchCity)));
 
-            PdfPTable table = new PdfPTable(5); // 3 columns.
-            table.setWidthPercentage(100); //Width 100%
-            table.setSpacingBefore(10f); //Space before table
-            table.setSpacingAfter(10f); //Space after table
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(20f);
+            table.setSpacingAfter(10f);
 
-            //Set Column widths
             float[] columnWidths = {1f, 1f, 1f, 1f, 1f};
             table.setWidths(columnWidths);
 
+            table.addCell(insertCell("Date"));
+            table.addCell(insertCell("Time"));
+            table.addCell(insertCell("Temp"));
+            table.addCell(insertCell("Description"));
+            table.addCell(insertCell("Picture"));
+
             for(Weather x : curData){
-                String[] dataDay = new String[]{x.getDate(), x.getTime(), x.getTemp(),
-                        infoRepo.findById(x.getWeather_id()).toString(), "later"};
 
-                for (int i = 0; i < dataDay.length; i++) {
+                String[] dataDay = new String[] {x.getDate(), x.getTime(), x.getTemp(),
+                        infoRepo.findById(x.getWeather_id()).getDescription()};
 
-                    PdfPCell cell1 = new PdfPCell(new Paragraph(dataDay[i]));
-                    cell1.setPaddingLeft(10);
-                    cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    cell1.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                    table.addCell(cell1);
-                }
+
+                for (int i = 0; i < dataDay.length; i++)
+                    table.addCell(insertCell(dataDay[i]));
+
+
+                String pathStr = infoRepo.findById(x.getWeather_id()).getUrlPicture();
+                Path path = Paths.get(ClassLoader.getSystemResource(pathStr).toURI());
+                Image img = Image.getInstance(path.toAbsolutePath().toString());
+                table.addCell(img);
             }
 
             document.add(table);
@@ -221,7 +196,23 @@ public class MainVIew extends VerticalLayout {
             e.printStackTrace();
         } catch (FileNotFoundException e){
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
+    }
 
+    /**
+     * Insert some string in cell in the table
+     * **/
+
+    private PdfPCell insertCell(String data){
+        PdfPCell cell = new PdfPCell(new Paragraph(data));
+        cell.setPaddingLeft(10);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        return cell;
     }
 }

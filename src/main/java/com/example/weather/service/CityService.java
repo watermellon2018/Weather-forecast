@@ -22,10 +22,12 @@ public class CityService implements ICityService {
     @Override
     public List<Weather> findAll() {
         return (List<Weather>) cityRepo.findAll();
+        //return cityRepo.findAllBy();
     }
 
     public List<Weather> getForecastToday(String city, LocalDate date){
-        return cityRepo.findByCityAndDate(city, date);
+        return  (city.isEmpty()) ? cityRepo.findByDate(date) : cityRepo.findByCityAndDate(city, date);
+       // return cityRepo.findByCityAndDate(city, date);
     }
 
     public List<Weather> getIntervalData(LocalDate b, LocalDate e, String city){

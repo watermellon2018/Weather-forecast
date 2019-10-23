@@ -21,11 +21,6 @@ public class Weather {
     private int weather_id;
 
 
-//    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
-//    @JoinColumn(name = "weather_id", nullable = false)
-//    private InfoWeather weather_id;
-
-
     @Column(name = "temp")
     private String temperature;
    // private String relativeHumidity;
@@ -33,33 +28,11 @@ public class Weather {
     @Column(name = "press")
     private String pressure;
 
-
     @Column(name = "date")
     private LocalDate date;
 
     @Column(name = "time")
     private LocalTime time;
-
-    // дата время температура давление описание
-
-    public Weather(LocalDate data, LocalTime time, String temp, String press, String city, int weatherID){
-        this.date = data;
-        this.time = time;
-        temperature = temp;
-        pressure = press;
-        this.city = city;
-        this.weather_id = weatherID;
-    }
-
-    public Weather(int zipCode, LocalDate data, LocalTime time, String temp, String press, String city, int weatherID){
-        this.date = data;
-        this.time = time;
-        temperature = temp;
-        pressure = press;
-        this.city = city;
-        this.weather_id = weatherID;
-        this.zipCode = zipCode;
-    }
 
     public Weather(LocalDate data, LocalTime time, int temp, int press, String city, int weatherID){
         this.date = data;
@@ -68,6 +41,7 @@ public class Weather {
         pressure = String.valueOf(press);
         this.city = city;
         this.weather_id = weatherID;
+
     }
 
     public Weather(){}
@@ -92,10 +66,11 @@ public class Weather {
     public String getPress(){
         return pressure;
     }
-//
+
     public int getWeather_id() {
         return weather_id;
     }
+
 
     @Override
     public String toString(){

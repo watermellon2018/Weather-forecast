@@ -8,18 +8,10 @@ import com.example.weather.repo.WeatherInfoRepository;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import com.example.weather.repo.CustomRepository;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 
 @Configuration
 @SpringBootApplication
@@ -33,12 +25,12 @@ public class WeatherApplication {
         CityWeatherByZipRepository reposCity = context.getBean(CityWeatherByZipRepository.class);
 
         // save a couple of customers
-        InfoWeather a = new InfoWeather("Cloudly");
-        InfoWeather b = new InfoWeather("Snowly");
-        InfoWeather c = new InfoWeather("Thundershtorm");
-        InfoWeather d = new InfoWeather("Sunny");
-        InfoWeather e = new InfoWeather("Murky");
-        InfoWeather g = new InfoWeather("Foggy");
+        InfoWeather a = new InfoWeather("Cloudly", "cloudly.png");
+        InfoWeather b = new InfoWeather("Snowly", "snow.png");
+        InfoWeather c = new InfoWeather("Thundershtorm", "rain.png");
+        InfoWeather d = new InfoWeather("Sunny", "sun.png");
+        InfoWeather e = new InfoWeather("Murky", "murky.png");
+        InfoWeather g = new InfoWeather("Foggy", "foggy.png");
 
         repository.save(a);
         repository.save(b);
@@ -68,41 +60,10 @@ public class WeatherApplication {
 
 
 
-        Iterable<InfoWeather> customers = repository.findAll();
-        System.out.println("Customers found with findAll():");
-        System.out.println("-------------------------------");
-        for (InfoWeather customer : customers) {
-            System.out.println(customer);
-        }
-        System.out.println();
 
-//       Weather w =reposCity.findByZipCode("123456");
-//
-//            System.out.print(w.toString());
-//
-//            int b = w.getWeatherID();
-//            InfoWeather bauers = repository.findById(b);
-//            System.out.println("--------------------------------------------");
-//                System.out.println(bauers);
 
 
         //context.close();
-
-        // fetch an individual customer by ID
-//        InfoWeather customer = repository.findOne(1);
-//        System.out.println("Customer found with findOne(1L):");
-//        System.out.println("--------------------------------");
-//        System.out.println(customer);
-//        System.out.println();
-
-        // fetch customers by last name
-       /* List<InfoWeather> bauers = repository.findByDescription("Cloudly");
-        System.out.println("Customer found with findByLastName('Cloudle'):");
-        System.out.println("--------------------------------------------");
-        for (InfoWeather bauer : bauers) {
-            System.out.println(bauer);
-        }*/
-
     }
 /*
     @Bean
